@@ -30,6 +30,36 @@ Or copy individual files into an existing `~/.claude/` setup.
 | `merge-workspace` | `/merge-workspace` | Merge a git worktree branch into main with preview and confirmation |
 | `visual-qa` | `/visual-qa` | Visual QA testing with Playwright screenshots |
 
+## Parallel Workspace Workflow
+
+These agents and skills are designed around a three-workspace workflow using git worktrees and iTerm split panes, with three Claude Code sessions running simultaneously:
+
+```
+┌─────────────────┬─────────────────┬─────────────────┐
+│   Workspace A   │   Workspace B   │      Main       │
+│   (feature)     │   (feature)     │  (integration)  │
+│                 │                 │                 │
+│  Build features │  Build features │  Merge & test   │
+│  independently  │  independently  │  Resolve conflicts│
+│                 │                 │  Small tasks    │
+└─────────────────┴─────────────────┴─────────────────┘
+```
+
+### How it works
+
+1. **Task triage** — Use `/architect` to evaluate a task. If it's large, produce a spec and merge it to main for later. If it's small, start implementation immediately.
+2. **Start work** — On workspace A or B, run `/start-task`. This rebases on main (picking up the latest integrated code) and creates a task branch.
+3. **Build in parallel** — Both workspaces implement separate features simultaneously. Tasks are split by feature to avoid overlap.
+4. **Merge after each task** — When a workspace finishes, switch to main and run `/merge-workspace` to pull in the changes. Regular merge (not squash) preserves commit SHAs so the other workspace can rebase cleanly.
+5. **Repeat** — The other workspace starts its next task, rebases on the updated main, and continues.
+
+### Key rules
+
+- **Small tasks** — Keep features/fixes small so merges stay simple and frequent.
+- **Rebase only at task start** — Workspaces rebase on main via `/start-task`, not mid-task.
+- **Main handles integration** — The main workspace resolves merge conflicts, runs integration/manual tests, and handles lightweight tasks like backlog grooming.
+- **Feature separation** — Assign unrelated features to each workspace to minimize conflicts.
+
 ## Design Principles
 
 - **Discover, don't hardcode** — Skills detect project structure (test frameworks, task files, worktrees) rather than assuming paths
